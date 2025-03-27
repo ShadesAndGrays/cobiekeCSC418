@@ -31,6 +31,7 @@ from enum import Enum
 import os
 import cv2 as cv
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class Collection(Enum):
@@ -78,47 +79,75 @@ Select Transformation
 
     @staticmethod
     def gaussian_blur(img):
-        output = img
+        width = int(input("Kernel width: "))
+        height = int(input("Kernel height: "))
+        output = cv.GaussianBlur(img,(width,height),0)
         return output
 
     @staticmethod
     def median_blur(img):
-        output = img
+        amount = int(input("blur amount(1-10): "))
+        output = cv.medianBlur(img,amount)
         return output
 
     @staticmethod
     def bilateral_blur(img):
-        output = img
+        diameter = int(input("blur diameter(1-10): "))
+        output = cv.bilateralFilter(img,diameter,75,75)
         return output
 
     @staticmethod
     def shear_y(img):
-        output = img
+        (cols,rows,_) = img.shape
+        shear_amount = np.float32(input("Shear amount(0.0 - 1.0): "))
+        scale = np.float32(input("Scale: "))
+        M = np.float32(np.array([[1,0,0],[shear_amount,1,0],[0,0,1]]))
+        output = cv.warpPerspective(img,M,(int(cols*scale),int(rows*scale)))
         return output
 
     @staticmethod
     def shear_x(img):
-        output = img
+        (cols,rows,_) = img.shape
+        scale = np.float32(input("Scale: "))
+        shear_amount = np.float32(input("Shear amount(0.0 - 1.0): "))
+        M = np.float32(np.array([[1,shear_amount,0],[0,1,0],[0,0,1]]))
+        output = cv.warpPerspective(img,M,(int(cols*scale),int(rows*scale)))
         return output
 
     @staticmethod
     def crop(img):
-        output = img
+        x_begin = int(input("Top Left(x): "))
+        y_begin = int(input("Top Left(y): "))
+        x_end = int(input("Bottom Right(x): "))
+        y_end = int(input("Bottom Right(y): "))
+
+        output = img[y_begin:y_end, x_begin:x_end] # px (50 - 200, y axis) 50 - 80 
         return output
 
     @staticmethod
     def rotate(img):
-        output = img
+         
+        degree = int(input("Degree: "))
+        scale = int(input("Scale: "))
+        (cols,rows,_) = img.shape
+        origin = (cols/2,rows/2)
+        output = cv.warpAffine(img,cv.getRotationMatrix2D(origin,degree,scale),(cols,rows))
         return output
 
     @staticmethod
     def refelct(img):
-        output = img
+        (cols,rows,_) = img.shape
+        M = np.float32(np.array([[1,0,0],[0,-1,rows],[0,0,1]]))
+        output = cv.warpPerspective(img,M,(int(cols),int(rows)))
         return output
 
     @staticmethod
     def translate(img):
-        output = img
+        (cols,rows,_) = img.shape
+        x = int(input(" traslate x: "))
+        y = int(input(" traslate y: "))
+        M = np.float32(np.array([[1,0,x],[0,1,y]]))
+        output = cv.warpAffine(img,M,(cols,rows))
         return output
 
 class User:
