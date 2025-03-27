@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 
 img = cv.imread('img/city.jpg')
-row, cols = img.shape
+(row, cols,_) = img.shape
 
 #plot the orginal image
 plt.subplot(1,2,1)

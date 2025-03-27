@@ -8,7 +8,7 @@ plt.subplot(1,2,1)
 plt.title("Original")
 plt.imshow(img)
 
-rows, cols = img.shape
+(rows, cols,_) = img.shape
 
 M = np.float32(np.array([[1,0,0],[0,-1,rows],[0,0,1]]))
 
