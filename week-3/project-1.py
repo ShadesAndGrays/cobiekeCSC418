@@ -32,6 +32,7 @@ import os
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
+import re
 
 
 class Collection(Enum):
@@ -121,7 +122,7 @@ Select Transformation
         x_end = int(input("Bottom Right(x): "))
         y_end = int(input("Bottom Right(y): "))
 
-        output = img[y_begin:y_end, x_begin:x_end] # px (50 - 200, y axis) 50 - 80 
+        output = img[y_begin:y_end, x_begin:x_end]
         return output
 
     @staticmethod
@@ -151,20 +152,24 @@ Select Transformation
         return output
 
 class User:
-    def __init__(self,id,email,password) -> None:
+    def __init__(self,id,email,age,password) -> None:
         self.id = id
         self.email = email
         self.password = password
+        self.age = age
 
     def validate(self,email,password):
         return self.email == email and self.password == password
 
 def login(email) -> int:
     password = input("Password: ")
-    with open('img/museum/auth.json','r') as file:
+    with open('auth.json','r') as file:
         auth = json.load(file) # load credentials
-        for user in [User(x['id'],x["email"],x["password"]) for x in auth]: # cast and iterate
+        for user in [User(int(x['id']),x["email"],int(x['age']),x["password"]) for x in auth]: # cast and iterate
             if email == user.email:
+                if user.age < 18:
+                    print("You are not above 18")
+                    return -1
                 if password == user.password:
                     return user.id
                 else:
@@ -211,7 +216,8 @@ def display_trasform(image_files):
     file = select_from_path_list(image_files)
     img = cv.imread(file)
     transformation = ImageTransformer.select_transfomer()
-    print(f"Image {img.shape}")
+    (cols,rows,_) = img.shape
+    print(f"Image size: height:{cols}px width: {rows}px")
     img = transformation(img)
     
     plt.subplot(1,1,1)
@@ -226,6 +232,9 @@ def display_trasform(image_files):
 
 def main():
     email = input("Enter you email: ")
+    if not re.match(r"^\S+@\S+\.\S+$",email):
+        print("invalid email") 
+        return
     user_id = login(email)
     if user_id < 0: # user does not exist
         return 
