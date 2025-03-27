@@ -211,6 +211,7 @@ def display_trasform(image_files):
     file = select_from_path_list(image_files)
     img = cv.imread(file)
     transformation = ImageTransformer.select_transfomer()
+    print(f"Image {img.shape}")
     img = transformation(img)
     
     plt.subplot(1,1,1)
