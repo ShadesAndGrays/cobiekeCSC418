@@ -1,7 +1,9 @@
+from json import load
 import cv2
-import time
+import tkinter as tk
+from tkinter import ttk, filedialog
 import numpy as np
-
+from PIL import Image, ImageTk
 
 class ImageFilter:
     @staticmethod
@@ -10,8 +12,8 @@ class ImageFilter:
         sobel_x = cv2.Sobel(image,cv2.CV_64F, 1,0,ksize=3)
         sobel_y = cv2.Sobel(image,cv2.CV_64F, 0,1,ksize=3)
 
-        sobel_combined = cv2.magnitude(sobel_x,sobel_y)/(64*16)
-        return sobel_combined
+        sobel_combined = cv2.magnitude(sobel_x,sobel_y)
+        return np.uint8(sobel_combined)
 
     @staticmethod
     def Perwitt(image):
@@ -68,22 +70,100 @@ class ImageFilter:
         return edges
 
 
-cap = cv2.VideoCapture(0)
+def image_cv_to_tk(image):
+    img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    photo = ImageTk.PhotoImage(Image.fromarray(img_rgb))
+    return photo
+
+def cv_image_scale(cvimage,size=200):
+    scaled_image = cv2.resize(cvimage,(size,size),interpolation=cv2.INTER_LANCZOS4)
+    return scaled_image
 
 def main():
-    while True:
+    root = tk.Tk()
+    root.title("Edge detector")
 
-        ret ,frame = cap.read()
-        B, G , frame = cv2.split(frame)
+    edge_detections = {
+            "Sobel":  {
+                "desc": "Apply Sobel edge detectin",
+                "effect":ImageFilter.Sobel,
+                },
+            "Perwitt": {
+                "desc": "Apply Perwitt edge detectin",
+                "effect":ImageFilter.Perwitt,
+                },
+            "Robert":{
+                "desc": "Apply Robert edge detectin",
+                "effect":ImageFilter.Robert,
+                },
+            "Laplacian":{
+                "desc": "Apply Laplacian edge detection",
+                "effect":ImageFilter.Laplacian,
+                } ,
+            "Canny":{
+                "desc": "Apply Canny edge detection",
+                "effect":ImageFilter.Canny,
+                },
+            }
 
-        if not ret:
-            print("You can never make it")
-            # break
+    # set up frames
+    filter_frame = tk.Frame(root,background="white")
+    filter_frame.pack(side="left",expand=True,fill="both",anchor="w")
+    display_frame = tk.Frame(root,background="white")
+    display_frame.pack(side="left",expand=True,fill="both",anchor="e")
 
-        cv2.imshow("Camera Feed", ImageFilter.Canny(frame))
-        if cv2.waitKey(100)  & 0xFF==ord('q'):
-            break
-        pass
-    pass
+    # set up image_label
+    loaded_image = []
+    preview_image = []
+
+    # set up buttons
+    select_file_button = ttk.Button(filter_frame,text="Select File")
+    select_file_button.bind("<Button-1>",lambda event : set_selected_file())
+    select_file_button.pack()
+    export_file_button = ttk.Button(display_frame,text="Export Image")
+    export_file_button.bind("<Button-1>",lambda event : export_image())
+    export_file_button.pack()
+
+    image_label = ttk.Label(display_frame,background="white")
+    image_label.pack()
+
+    def update_loaded_img(img):
+        nonlocal loaded_image
+        nonlocal preview_image
+        loaded_image = img 
+        scaled_image = cv_image_scale(img)
+        preview_image =  image_cv_to_tk(scaled_image)
+        image_label.configure(image=preview_image)
+
+    # set up effects list
+    effect_list_frame = tk.Frame(filter_frame ,background="white")
+    effect_list_frame.pack()
+    for i in edge_detections.keys():
+        effect_frame = tk.Frame(effect_list_frame,background="white")
+        effect_frame.pack()
+        label = ttk.Label(effect_frame,text=edge_detections[i]["desc"])
+        label.pack()
+        button = ttk.Button(effect_list_frame,text=f"Apply {i}")
+        button.bind("<Button-1>", lambda event,  effect=edge_detections[i]["effect"]: apply_effect(effect))
+        button.pack()
+
+    # apply edge detection
+    def apply_effect(filter):
+        update_loaded_img(filter(loaded_image))
+
+
+    def set_selected_file():
+        nonlocal loaded_image
+        file = filedialog.askopenfilename()
+        select_file_button.configure(text=file.split("/")[-1])
+        update_loaded_img(cv2.imread(file))
+
+    # export images
+    def export_image():
+        output_file =  filedialog.asksaveasfilename(filetypes=[("PNG",".png"),("JPEG",".jpg")])
+        nonlocal loaded_image
+        cv2.imwrite(output_file,loaded_image)
+
+    tk.mainloop()
 
 main()
