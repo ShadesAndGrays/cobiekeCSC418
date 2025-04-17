@@ -1,18 +1,22 @@
 import cv2
 import numpy as np
 
-
+# load YOLO
 net = cv2.dnn.readNet('cfg/yolov3.weights','cfg/yolov3.cfg')
-
 classes = []
 
-with open('cfg/coco.names','r') as f:
+with open('cfg/coco.names', 'r') as f:
     classes = f.read().splitlines()
 
-image = cv2.imread('img/friends.jpg')
-height,width, _ = image.shape
 
-blob = cv2.dnn.blobFromImage(image,1/255.0, (416,416),swapRB=True,crop=False)
+print("\n".join(classes)) #display list of classes
+
+image = cv2.imread('img/lake.jpg')
+height,width , _ = image.shape
+
+# cv2.imwrite("output.png",image)
+
+blob = cv2.dnn.blobFromImage(image,1/255.0,(416,416),swapRB=True,crop=False)
 net.setInput(blob)
 
 output_layers_names = net.getUnconnectedOutLayersNames()
@@ -29,7 +33,7 @@ for output in layer_outputs:
         confidence = scores[class_id]
         if confidence > 0.5:
             center_x = int(detection[0] * width)
-            center_y = int(detection[0] * height)
+            center_y = int(detection[1] * height)
             w = int(detection[2] * width)
             h = int(detection[3] * height)
 
@@ -53,7 +57,7 @@ for i in indexes.flatten():
     cv2.rectangle(image,(x,y),(x+w,y+h),color,2)
     cv2.putText(image,label + " " + confidence, (x,y+20),font,2,(255,255,255),2)
 
-cv2.imshow('Image',image)
+# cv2.imshow('Image',image)
+cv2.imwrite("output.png",image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
